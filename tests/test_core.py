@@ -1,4 +1,7 @@
-from budget.core import add_transaction
+from pathlib import Path
+import csv
+
+from budget.core import add_transaction, filter_by_category, get_balance
 
 
 def test_add_transaction_increases_length() -> None:
@@ -63,3 +66,87 @@ def test_add_transaction_accepts_empty_description() -> None:
     result = add_transaction(transactions, transaction)
 
     assert result[0]["description"] == ""
+
+
+def test_get_balance_returns_zero_for_empty_list() -> None:
+    assert get_balance([]) == 0.0
+
+
+def test_get_balance_matches_step2_transactions() -> None:
+    data_path = Path("data/step2_transactions.csv")
+    with data_path.open(encoding="utf-8-sig", newline="") as file_handle:
+        rows = list(csv.DictReader(file_handle))
+
+    transactions = [
+        {
+            "date": row["date"],
+            "type": row["type"],
+            "category": row["category"],
+            "description": row["description"],
+            "amount": float(row["amount"]),
+            "memo": row["memo"],
+        }
+        for row in rows
+    ]
+
+    assert get_balance(transactions) == 24285027.0
+
+
+def test_filter_by_category_matches_step2_transactions_case_insensitive() -> None:
+    data_path = Path("data/step2_transactions.csv")
+    with data_path.open(encoding="utf-8-sig", newline="") as file_handle:
+        rows = list(csv.DictReader(file_handle))
+
+    transactions = [
+        {
+            "date": row["date"],
+            "type": row["type"],
+            "category": row["category"],
+            "description": row["description"],
+            "amount": float(row["amount"]),
+            "memo": row["memo"],
+        }
+        for row in rows
+    ]
+
+    filtered_transactions = filter_by_category(transactions, "여행")
+    uppercased_transactions = filter_by_category(transactions, "여행".upper())
+
+    assert len(filtered_transactions) == 6
+    assert len(uppercased_transactions) == 6
+    assert filtered_transactions == uppercased_transactions
+
+
+def test_filter_by_category_returns_empty_list_for_missing_category() -> None:
+    transactions: list[dict[str, object]] = []
+
+    result = filter_by_category(transactions, "없는카테고리")
+
+    assert result == []
+
+
+def test_filter_by_category_returns_independent_list() -> None:
+    transactions: list[dict[str, object]] = [
+        {
+            "date": "2026-01-04",
+            "type": "\uc9c0\ucd9c",
+            "category": "\uc5ec\ud589",
+            "description": "\ud56d\uacf5\uad8c",
+            "amount": -979796,
+            "memo": "\uba54\ubaa8_3",
+        }
+    ]
+
+    result = filter_by_category(transactions, "여행")
+    result.append(
+        {
+            "date": "2026-01-05",
+            "type": "\uc9c0\ucd9c",
+            "category": "\uc5ec\ud589",
+            "description": "\uc5ec\ud589 \uacbd\ube44",
+            "amount": -1000,
+            "memo": "",
+        }
+    )
+
+    assert len(transactions) == 1
