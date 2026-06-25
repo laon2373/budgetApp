@@ -161,3 +161,13 @@ def test_load_transactions_from_csv_loads_step1_transactions() -> None:
     assert isinstance(transactions[0]["amount"], int)
     assert transactions[-1]["amount"] == 25000
     assert isinstance(transactions[-1]["amount"], int)
+
+
+def test_load_transactions_from_csv_handles_step4_large_file() -> None:
+    transactions = load_transactions_from_csv("data/step4_large_transactions.csv")
+
+    assert len(transactions) == 5000
+    assert transactions[0]["amount"] == -64372
+    assert isinstance(transactions[0]["amount"], int)
+    assert transactions[-1]["amount"] == 445320
+    assert isinstance(transactions[-1]["amount"], int)
