@@ -1,7 +1,7 @@
 from pathlib import Path
 import csv
 
-from budget.core import add_transaction, filter_by_category, get_balance
+from budget.core import add_transaction, filter_by_category, get_balance, load_transactions_from_csv
 
 
 def test_add_transaction_increases_length() -> None:
@@ -150,3 +150,14 @@ def test_filter_by_category_returns_independent_list() -> None:
     )
 
     assert len(transactions) == 1
+
+
+def test_load_transactions_from_csv_loads_step1_transactions() -> None:
+    transactions = load_transactions_from_csv("data/step1_transactions.csv")
+
+    assert len(transactions) == 10
+    assert transactions[0]["date"] == "2026-01-05"
+    assert transactions[0]["amount"] == -12000
+    assert isinstance(transactions[0]["amount"], int)
+    assert transactions[-1]["amount"] == 25000
+    assert isinstance(transactions[-1]["amount"], int)
