@@ -1,7 +1,13 @@
 from pathlib import Path
 import csv
 
-from budget.core import add_transaction, filter_by_category, get_balance, load_transactions_from_csv
+from budget.core import (
+    add_transaction,
+    filter_by_category,
+    get_balance,
+    load_transactions_from_csv,
+    monthly_summary,
+)
 
 
 def test_add_transaction_increases_length() -> None:
@@ -92,7 +98,8 @@ def test_get_balance_matches_step2_transactions() -> None:
     assert get_balance(transactions) == 24285027.0
 
 
-def test_filter_by_category_matches_step2_transactions_case_insensitive() -> None:
+def test_filter_by_category_matches_step2_transactions_case_insensitive(
+) -> None:
     data_path = Path("data/step2_transactions.csv")
     with data_path.open(encoding="utf-8-sig", newline="") as file_handle:
         rows = list(csv.DictReader(file_handle))
@@ -163,11 +170,28 @@ def test_load_transactions_from_csv_loads_step1_transactions() -> None:
     assert isinstance(transactions[-1]["amount"], int)
 
 
-def test_load_transactions_from_csv_handles_step4_large_file() -> None:
-    transactions = load_transactions_from_csv("data/step4_large_transactions.csv")
+def test_load_transactions_from_csv_handles_step4_large_file(
+) -> None:
+    transactions = load_transactions_from_csv(
+        "data/step4_large_transactions.csv"
+    )
 
     assert len(transactions) == 5000
     assert transactions[0]["amount"] == -64372
     assert isinstance(transactions[0]["amount"], int)
     assert transactions[-1]["amount"] == 445320
     assert isinstance(transactions[-1]["amount"], int)
+
+    expected_balance = float(
+        sum(transaction["amount"] for transaction in transactions)
+    )
+    assert get_balance(transactions) == expected_balance
+
+    summary = monthly_summary(transactions)
+    assert len(summary) >= 65
+    assert any(item["month"].startswith("2020") for item in summary)
+    assert any(item["month"].startswith("2026") for item in summary)
+    assert all(
+        set(item.keys()) == {"month", "income", "expense", "net"}
+        for item in summary
+    )
